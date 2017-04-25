@@ -1,0 +1,150 @@
+version: "2"
+services:
+  # hadoop config container
+  hadoopconfig:
+    container_name: hadoopconfig
+    build:
+      context: ./config
+      dockerfile: hadoop-config.dockerfile
+    image: docker.zhimei360.com/hadoop-config:2.7
+    networks:
+      - hadoop_network
+  # hadoop namenode FS init container
+  namenode_init:
+    container_name: namenode_init
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    volumes_from:
+      - hadoopconfig:ro
+    depends_on:
+      - hadoopconfig
+    command: ["hdfs", "--config", "/etc/hadoop", "namenode", "-format", "Hadoop_Cluster"]
+  # hadoop namenode container
+  namenode:
+    container_name: namenode
+    image: docker.zhimei360.com/hadoop:2.7
+    ports:
+      - "9000:9000"
+      - "50070:50070"
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    depends_on:
+      - hadoopconfig
+      - namenode_init
+    mem_limit: 1g
+    command: ["hadoop-daemon.sh", "--config", "/etc/hadoop", "--script", "hdfs", "start", "namenode"]
+  # hadoop datanode container
+  datanode1:
+    container_name: datanode1
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    volumes:
+      - datanode1_data:/hadoop/dfs/data
+    depends_on:
+      - hadoopconfig
+      - namenode
+    mem_limit: 1g
+    command: ["hadoop-daemon.sh", "--config", "/etc/hadoop", "--script", "hdfs", "start", "datanode"]
+  # hadoop datanode container
+  datanode2:
+    container_name: datanode2
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    volumes:
+      - datanode2_data:/hadoop/dfs/data
+    depends_on:
+      - hadoopconfig
+      - namenode
+    mem_limit: 1g
+    command: ["hadoop-daemon.sh", "--config", "/etc/hadoop", "--script", "hdfs", "start", "datanode"]
+  # hadoop datanode container
+  datanode3:
+    container_name: datanode3
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    volumes:
+      - datanode3_data:/hadoop/dfs/data
+    depends_on:
+      - hadoopconfig
+      - namenode
+    mem_limit: 1g
+    command: ["hadoop-daemon.sh", "--config", "/etc/hadoop", "--script", "hdfs", "start", "datanode"]
+  # yarn resourceManager container
+  resourceManager:
+    container_name: resourceManager
+    image: docker.zhimei360.com/hadoop:2.7
+    ports:
+      - "8032:8032"
+      - "8033:8033"
+      - "8088:8088"
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    depends_on:
+      - hadoopconfig
+    mem_limit: 2g
+    command: ["yarn-daemon.sh", "--config", "/etc/hadoop", "start", "resourcemanager"]
+  # yarn nodemanager container
+  nodeManager1:
+    container_name: nodeManager1
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    depends_on:
+      - hadoopconfig
+      - resourceManager
+    mem_limit: 1500m
+    command: ["yarn-daemon.sh", "--config", "/etc/hadoop", "start", "nodemanager"]
+  # yarn nodemanager container
+  nodeManager2:
+    container_name: nodeManager2
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    depends_on:
+      - hadoopconfig
+      - resourceManager
+    mem_limit: 1500m
+    command: ["yarn-daemon.sh", "--config", "/etc/hadoop", "start", "nodemanager"]
+  # yarn nodemanager container
+  nodeManager3:
+    container_name: nodeManager3
+    image: docker.zhimei360.com/hadoop:2.7
+    networks:
+      - hadoop_network
+    volumes_from:
+      - hadoopconfig:ro
+    depends_on:
+      - hadoopconfig
+      - resourceManager
+    mem_limit: 1500m
+    command: ["yarn-daemon.sh", "--config", "/etc/hadoop", "start", "nodemanager"]
+networks:
+  hadoop_network:
+    external: true
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  datanode3_data:
